@@ -8,6 +8,28 @@ import {HttpErrorResponse} from "@angular/common/http";
 import {PersistanceService} from "../../shared/services/persistance.service";
 import {Router} from "@angular/router";
 
+export const getCurrentUserEffects = createEffect(
+  (
+    actions$ = inject(Actions),
+    authService = inject(AuthService),
+    persistanceService = inject(PersistanceService)
+  ) => {
+    return actions$.pipe(
+      ofType(authActions.getCurrentUser),
+      switchMap(() => {
+        return authService.getCurrentUser().pipe(
+          map((currentUser: CurrentUserInterface) => {
+            return authActions.getCurrentUserSuccess({currentUser})
+          }),
+          catchError((errorResponse: HttpErrorResponse) => {
+            return of(authActions.getCurrentUserFailure())
+          })
+        )
+      })
+    )
+  }, {functional: true}
+)
+
 export const registerEffects = createEffect(
   (
     actions$ = inject(Actions),
@@ -35,6 +57,40 @@ export const redirectAfterRegisterEffect = createEffect(
   (actions$ = inject(Actions), router = inject(Router)) => {
     return actions$.pipe(
       ofType(authActions.registerSuccess),
+      tap(() => {
+        router.navigateByUrl('/')
+      })
+    )
+  }, {functional: true, dispatch: false}
+)
+
+export const loginEffects = createEffect(
+  (
+    actions$ = inject(Actions),
+    authService = inject(AuthService),
+    persistanceService = inject(PersistanceService)
+  ) => {
+    return actions$.pipe(
+      ofType(authActions.login),
+      switchMap(({request}) => {
+        return authService.login(request).pipe(
+          map((currentUser: CurrentUserInterface) => {
+            persistanceService.set('accessToken', currentUser.token)
+            return authActions.loginSuccess({currentUser})
+          }),
+          catchError((errorResponse: HttpErrorResponse) => {
+            return of(authActions.loginFailure({errors: errorResponse.error.errors}))
+          })
+        )
+      })
+    )
+  }, {functional: true}
+)
+
+export const redirectAfterLoginEffect = createEffect(
+  (actions$ = inject(Actions), router = inject(Router)) => {
+    return actions$.pipe(
+      ofType(authActions.loginSuccess),
       tap(() => {
         router.navigateByUrl('/')
       })
