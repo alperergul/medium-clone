@@ -15,7 +15,7 @@ import {authInterceptor} from './shared/services/authInterceptor'
 export const appConfig: ApplicationConfig = {
   providers: [
     provideRouter(routes),
-    provideHttpClient(withInterceptors([authInterceptor])),
+    provideHttpClient(withInterceptors([authInterceptor]), withFetch()),
     provideClientHydration(),
     provideStore({
       router: routerReducer
